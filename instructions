@@ -1,0 +1,117 @@
+Пул IronFish
+
+Хост - это сервер к которому вы будете подключать свои ноды с рыбой.
+Клиент - это сервер, который вы будете подключать к Хост-у
+
+Куда без этого + screen (screen - консольный оконный менеджер):
+apt-get update && apt-get upgrade && apt-get install screen -y
+
+Проверяем, что у вас версия, как минимум 0.1.27
+ironfish status -f
+Строка : Version - 0.1.27 @ src
+
+НА ХОСТЕ
+Получение граффити Хоста:
+ironfish config:get blockGraffiti
+Результат - это <blockGraffiti-хоста>
+
+Установка имени хоста (Вводить без "< >"):
+ironfish config:set poolName <blockGraffiti-хоста>
+Пример: ironfish config:set poolName SomeNameOfblockGraffiti
+
+Получение публичного ip-адреса сервера = <ip-address-of-pool>:
+wget -qO- eth0.me
+Результат = <ip-address-of-pool>
+Для примера будем использовать 1.1.1.1
+
+Присваиваем в качестве значения публичный ip-адрес сервера (<ip-address-of-pool>) для параметра "poolHost":
+ironfish config:set poolHost <ip-address-of-pool> 
+Пример: ironfish config:set poolHost 1.1.1.1
+Вывод:
+yarn run v1.22.18
+$ yarn build && yarn start:js config:set poolHost 1.1.1.1
+$ tsc -b
+$ cross-env OCLIF_TS_NODE=0 IRONFISH_DEBUG=1 node bin/run config:set poolHost 1.1.1.1
+Done in 1.99s.
+
+Перезагрузка рыбы:
+systemctl restart ironfishd ironfishd-miner
+
+Старт новой сессии в фоновом режиме:
+screen -S <NameOfSession>
+Пример:
+screen -S IronFishPool
+
+Старт работы пула:
+. $HOME/.bashrc
+. $HOME/.bash_profile
+ironfish miners:pool:start
+yarn run v1.22.18
+$ yarn build && yarn start:js miners:pool:start
+$ tsc -b
+$ cross-env OCLIF_TS_NODE=0 IRONFISH_DEBUG=1 node bin/run miners:pool:start
+ ›   Warning: miners:pool:start is not a ironfish command.
+Did you mean miners:pools:start? [y/n]: y
+Тут жмем <y+Enter>
+
+Starting pool with name SomeNameOfblockGraffiti
+Starting stratum server on 1.1.1.1:9034
+Connecting to node...
+Successfully connected to node
+Listening to node for new blocks
+Setting work for request: 0 0000000000000000aa7002000000000000000000000a6dff7b...
+Setting work for request: 1 0000000000000000aa7002000000000000000000000a6dff7b...
+Setting work for request: 2 0000000000000000aa7002000000000000000000000a6dff7b...
+Setting work for request: 3 0000000000000000aa7002000000000000000000000a6dff7b...
+Setting work for request: 4 0000000000000000aa7002000000000000000000000a6dff7b...
+...
+Выходим из сессии в фоновом режиме:
+CTRL+A+D
+
+Проверяем:
+netstat -antp | grep 9034
+Должен быть ответ (1.1.1.1 - должен быть ваш публичный ip-адрес сервера (<ip-address-of-pool>):
+tcp 0 0 1.1.1.1:9034     0.0.0.0:*     LISTEN  129559/node
+
+НА ВСЕХ КЛИЕНТАХ:
+apt-get install screen -y
+
+Старт новой сессии в фоновом режиме:
+screen -S <NameOfSession>
+Пример:
+screen -S IronFishPoolClient
+
+Получаем публичный адрес клиента (<your-public-address>):
+. $HOME/.bashrc
+. $HOME/.bash_profile
+ironfish accounts:publickey
+Account: SomeNameOfblockGraffiti, public key: 161d925f51efac0...
+161d925f51efac0... - это ваш <your-public-address>
+Подключаем клиента к пулу:
+ironfish miners:start -p <ip-address-of-pool> -a <your-public-address>
+Пример:
+ironfish miners:start -p 1.1.1.1 -a 161d925f51efac0...
+
+Вывод:
+Staring to mine with public address: 161d925f51efac0... at pool 1.1.1.1
+Connecting to pool...
+Successfully connected to pool
+Listening to pool for new work
+new work 00000000494cff9a3f4f473f91d116af7382c45e653facfeef85b8f43d9d6b64 65 0 H/s
+new work 00000000494cff9a3f4f473f91d116af7382c45e653facfeef85b8f43d9d6b64 66 5.15 GH/s
+new work 00000000494cff9a3f4f473f91d116af7382c45e653facfeef85b8f43d9d6b64 67 5.68 GH/s
+new work 00000000494cff9a3f4f473f91d116af7382c45e653facfeef85b8f43d9d6b64 68 5.58 GH/s
+new work 00000000494cff9a3f4f473f91d116af7382c45e653facfeef85b8f43d9d6b64 69 5.64 GH/s
+
+Выходим из сессии в фоновом режиме:
+CTRL+A+D
+
+Получение публичного ip-адреса сервера-КЛИЕНТА = <ip-address-of-client>:
+wget -qO- eth0.me
+Результат = <ip-address-of-client>
+Для примера будем использовать 2.2.2.2
+
+НА ХОСТЕ:
+Проверяем есть ли активное подключение к пулу от сервера клиента:
+netstat -antp | grep 2.2.2.2
+tcp  0  0 142.132.146.21:9034     2.2.2.2:43662      ESTABLISHED 129559/node
